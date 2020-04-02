@@ -33,7 +33,7 @@ class Tokenizer:
     ]
 
     def __init__(self, code):
-        self.code = code
+        self.code = code.strip()
 
     def _tokenize_next(self, code):
         for token_type, token_re in self.TOKEN_TYPES:
