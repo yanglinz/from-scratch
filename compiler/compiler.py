@@ -54,7 +54,8 @@ class Tokenizer:
         while code:
             token, position = self._tokenize_next(code)
             tokenized.append(token)
-            code = code[position:-1].strip()
+            code = code[position:]
+            code = code.lstrip()
 
             import pprint
             pprint.pprint(tokenized)
