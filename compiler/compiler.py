@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import pathlib
+import pprint
 import re
 
 
@@ -38,8 +39,11 @@ class Tokenizer:
     def _tokenize_next(self, code):
         for token_type, token_re in self.TOKEN_TYPES:
             # TODO: Come up with a better way to join regex
-            token_re = f"(\\A\\b{token_re}\\b)"
-            matched = re.search(token_re, code)
+            grouped_token_re = f"\\A(\\b{token_re}\\b)"
+            if token_type == TokenTypes.open_paren or TokenTypes.close_paren:
+                grouped_token_re = f"\\A({token_re})"
+
+            matched = re.search(grouped_token_re, code)
             if matched:
                 value = matched.group(0)
                 position = matched.end(0)
@@ -57,10 +61,9 @@ class Tokenizer:
             code = code[position:]
             code = code.lstrip()
 
-            import pprint
-            pprint.pprint(tokenized)
-        
-        
+        pprint.pprint(tokenized)
+
+
 def main():
     src_path = pathlib.Path(__file__).parent / "test.src"
     with open(src_path) as source:
