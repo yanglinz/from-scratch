@@ -2,9 +2,14 @@ from dataclasses import dataclass
 import pathlib
 import pprint
 import re
+import typing
 
 
-class TokenMatchException(Exception):
+class LexingTokenMatchException(Exception):
+    pass
+
+
+class ParsingUnexpectedTokenException(Exception):
     pass
 
 
@@ -21,6 +26,18 @@ class TokenTypes:
 class Token:
     token_type: str
     value: str
+
+
+@dataclass
+class ASTNodeDefine:
+    name: str
+    arg_names: typing.List[str]
+    body: typing.Any
+
+
+@dataclass
+class ASTNodeInteger:
+    value: int
 
 
 class Tokenizer:
@@ -49,19 +66,58 @@ class Tokenizer:
                 position = matched.end(0)
                 return Token(token_type=token_type, value=value), position
 
-        raise TokenMatchException
+        raise LexingTokenMatchException
 
     def tokenize(self):
-        tokenized = []
+        token_list = []
 
         code = self.code
         while code:
             token, position = self._tokenize_next(code)
-            tokenized.append(token)
+            token_list.append(token)
             code = code[position:]
             code = code.lstrip()
 
-        pprint.pprint(tokenized)
+        return token_list
+
+
+class Parser:
+    def __init__(self, token_list):
+        self.token_list = token_list
+
+    def _consume(self, expected_type):
+        token = self.token_list[0]
+        self.token_list = self.token_list[1:]
+
+        if token.token_type == expected_type:
+            return token
+
+        raise ParsingUnexpectedTokenException(
+            {"expected": expected_type, "received": token}
+        )
+
+    def _parse_def_arg_names(self):
+        self._consume(TokenTypes.open_paren)
+        self._consume(TokenTypes.close_paren)
+        return []
+
+    def _parse_integer(self):
+        token = self._consume(TokenTypes.integer)
+        return ASTNodeInteger(value=int(token.value))
+
+    def _parse_expression(self):
+        return self._parse_integer()
+
+    def _parse_def(self):
+        self._consume(TokenTypes.define)
+        name = self._consume(TokenTypes.identifier).value
+        arg_names = self._parse_def_arg_names()
+        body = self._parse_expression()
+        self._consume(TokenTypes.end)
+        return ASTNodeDefine(name=name, arg_names=arg_names, body=body)
+
+    def parse(self):
+        return self._parse_def()
 
 
 def main():
@@ -69,7 +125,14 @@ def main():
     with open(src_path) as source:
         content = source.read()
 
-    Tokenizer(content).tokenize()
+    tokens = Tokenizer(content).tokenize()
+    parsed = Parser(tokens).parse()
+
+    print("\nTokens:")
+    pprint.pprint(tokens)
+
+    print("\nParsed Tree:")
+    pprint.pprint(parsed)
 
 
 if __name__ == "__main__":
