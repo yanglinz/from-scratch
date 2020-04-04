@@ -5,11 +5,15 @@ import re
 import typing
 
 
-class LexingTokenMatchException(Exception):
+class LexerTokenMatchException(Exception):
     pass
 
 
-class ParsingUnexpectedTokenException(Exception):
+class ParserUnexpectedTokenException(Exception):
+    pass
+
+
+class GeneratorUnexpectedNodeException(Exception):
     pass
 
 
@@ -83,7 +87,7 @@ class Tokenizer:
                 position = matched.end(0)
                 return Token(token_type=token_type, value=value), position
 
-        raise LexingTokenMatchException({"code": code})
+        raise LexerTokenMatchException({"code": code})
 
     def tokenize(self):
         token_list = []
@@ -109,7 +113,7 @@ class Parser:
         if token.token_type == expected_type:
             return token
 
-        raise ParsingUnexpectedTokenException(
+        raise ParserUnexpectedTokenException(
             {"expected": expected_type, "received": token}
         )
 
@@ -164,9 +168,11 @@ class Parser:
     def _parse_expression(self):
         if self._peek(TokenTypes.integer):
             return self._parse_integer()
-        elif self._peek(TokenTypes.identifier) and self._peek(TokenTypes.open_paren, offset=1):
+        elif self._peek(TokenTypes.identifier) and self._peek(
+            TokenTypes.open_paren, offset=1
+        ):
             return self._parse_func_call()
-        
+
         return self._parse_var_ref()
 
     def _parse_def(self):
@@ -181,6 +187,11 @@ class Parser:
         return self._parse_def()
 
 
+class Generator:
+    def generate(self, node):
+        raise GeneratorUnexpectedNodeException({"node": node})
+
+
 def main():
     src_path = pathlib.Path(__file__).parent / "test.src"
     with open(src_path) as source:
@@ -191,9 +202,14 @@ def main():
     pprint.pprint(tokens)
     print("\n")
 
-    parsed = Parser(tokens).parse()
+    tree = Parser(tokens).parse()
     print("Parsed Tree:")
-    pprint.pprint(parsed)
+    pprint.pprint(tree)
+    print("\n")
+
+    code = Generator().generate(tree)
+    print("Generated Code:")
+    pprint.pprint(code)
 
 
 if __name__ == "__main__":
