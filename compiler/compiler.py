@@ -189,6 +189,21 @@ class Parser:
 
 class Generator:
     def generate(self, node):
+        if isinstance(node, ASTNodeDefine):
+            function_name = node.name
+            arguments = ", ".join(node.arg_names)
+            body = self.generate(node.body)
+            code = f"function {function_name}({arguments}) {{ {body} }}"
+            return code
+        elif isinstance(node, ASTNodeFunctionCall):
+            function_name = node.name
+            arguments = ", ".join([self.generate(n) for n in node.arg_expressions])
+            return f"{function_name}({arguments})"
+        elif isinstance(node, ASTNodeVarRef):
+            return node.value
+        elif isinstance(node, ASTNodeInteger):
+            return str(node.value)
+
         raise GeneratorUnexpectedNodeException({"node": node})
 
 
@@ -209,7 +224,7 @@ def main():
 
     code = Generator().generate(tree)
     print("Generated Code:")
-    pprint.pprint(code)
+    print(code)
 
 
 if __name__ == "__main__":
