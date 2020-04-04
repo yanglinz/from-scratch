@@ -41,6 +41,12 @@ class ASTNodeInteger:
     value: int
 
 
+@dataclass
+class ASTNodeFunctionCall:
+    name: str
+    arg_expressions: typing.Any
+
+
 class Tokenizer:
     TOKEN_TYPES = [
         (TokenTypes.define, "def"),
@@ -125,8 +131,32 @@ class Parser:
         token = self._consume(TokenTypes.integer)
         return ASTNodeInteger(value=int(token.value))
 
+    def _parse_arg_expressions(self):
+        arg_expressions = []
+
+        self._consume(TokenTypes.open_paren)
+        if not self._peek(TokenTypes.close_paren):
+            arg_expression = self._parse_expression()
+            arg_expressions.append(arg_expression)
+
+            while self._peek(TokenTypes.comma):
+                self._consume(TokenTypes.comma)
+                arg_expression = self._parse_expression()
+                arg_expressions.append(arg_expression)
+
+        self._consume(TokenTypes.close_paren)
+        return arg_expressions
+
+    def _parse_func_call(self):
+        name = self._consume(TokenTypes.identifier).value
+        arg_expressions = self._parse_arg_expressions()
+        return ASTNodeFunctionCall(name=name, arg_expressions=arg_expressions)
+
     def _parse_expression(self):
-        return self._parse_integer()
+        if self._peek(TokenTypes.integer):
+            return self._parse_integer()
+
+        return self._parse_func_call()
 
     def _parse_def(self):
         self._consume(TokenTypes.define)
@@ -146,11 +176,12 @@ def main():
         content = source.read()
 
     tokens = Tokenizer(content).tokenize()
-    print("\nTokens:")
+    print("Tokens:")
     pprint.pprint(tokens)
+    print("\n")
 
     parsed = Parser(tokens).parse()
-    print("\nParsed Tree:")
+    print("Parsed Tree:")
     pprint.pprint(parsed)
 
 
