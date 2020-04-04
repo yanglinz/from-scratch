@@ -193,7 +193,7 @@ class Generator:
             function_name = node.name
             arguments = ", ".join(node.arg_names)
             body = self.generate(node.body)
-            code = f"function {function_name}({arguments}) {{ {body} }}"
+            code = f"function {function_name}({arguments}) {{ return {body} }}"
             return code
         elif isinstance(node, ASTNodeFunctionCall):
             function_name = node.name
