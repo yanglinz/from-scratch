@@ -47,6 +47,11 @@ class ASTNodeFunctionCall:
     arg_expressions: typing.Any
 
 
+@dataclass
+class ASTNodeVarRef:
+    value: str
+
+
 class Tokenizer:
     TOKEN_TYPES = [
         (TokenTypes.define, "def"),
@@ -108,8 +113,8 @@ class Parser:
             {"expected": expected_type, "received": token}
         )
 
-    def _peek(self, expected_type):
-        return self.token_list[0].token_type == expected_type
+    def _peek(self, expected_type, offset=0):
+        return self.token_list[offset].token_type == expected_type
 
     def _parse_def_arg_names(self):
         arg_names = []
@@ -152,11 +157,17 @@ class Parser:
         arg_expressions = self._parse_arg_expressions()
         return ASTNodeFunctionCall(name=name, arg_expressions=arg_expressions)
 
+    def _parse_var_ref(self):
+        var_name = self._consume(TokenTypes.identifier).value
+        return ASTNodeVarRef(value=var_name)
+
     def _parse_expression(self):
         if self._peek(TokenTypes.integer):
             return self._parse_integer()
-
-        return self._parse_func_call()
+        elif self._peek(TokenTypes.identifier) and self._peek(TokenTypes.open_paren, offset=1):
+            return self._parse_func_call()
+        
+        return self._parse_var_ref()
 
     def _parse_def(self):
         self._consume(TokenTypes.define)
