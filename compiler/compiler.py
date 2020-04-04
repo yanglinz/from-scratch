@@ -20,6 +20,7 @@ class TokenTypes:
     integer = ":integer"
     open_paren = ":open_paren"
     close_paren = ":close_paren"
+    comma = ":comma"
 
 
 @dataclass
@@ -48,6 +49,7 @@ class Tokenizer:
         (TokenTypes.integer, "[0-9]+"),
         (TokenTypes.open_paren, "\("),
         (TokenTypes.close_paren, "\)"),
+        (TokenTypes.comma, ","),
     ]
 
     def __init__(self, code):
@@ -57,7 +59,11 @@ class Tokenizer:
         for token_type, token_re in self.TOKEN_TYPES:
             # TODO: Come up with a better way to join regex
             grouped_token_re = f"\\A(\\b{token_re}\\b)"
-            if token_type == TokenTypes.open_paren or TokenTypes.close_paren:
+            if token_type in (
+                TokenTypes.open_paren,
+                TokenTypes.close_paren,
+                TokenTypes.comma,
+            ):
                 grouped_token_re = f"\\A({token_re})"
 
             matched = re.search(grouped_token_re, code)
@@ -66,7 +72,7 @@ class Tokenizer:
                 position = matched.end(0)
                 return Token(token_type=token_type, value=value), position
 
-        raise LexingTokenMatchException
+        raise LexingTokenMatchException({"code": code})
 
     def tokenize(self):
         token_list = []
@@ -96,10 +102,24 @@ class Parser:
             {"expected": expected_type, "received": token}
         )
 
+    def _peek(self, expected_type):
+        return self.token_list[0].token_type == expected_type
+
     def _parse_def_arg_names(self):
+        arg_names = []
         self._consume(TokenTypes.open_paren)
+
+        if self._peek(TokenTypes.identifier):
+            arg_token = self._consume(TokenTypes.identifier)
+            arg_names.append(arg_token.value)
+
+            while self._peek(TokenTypes.comma):
+                self._consume(TokenTypes.comma)
+                arg_token = self._consume(TokenTypes.identifier)
+                arg_names.append(arg_token.value)
+
         self._consume(TokenTypes.close_paren)
-        return []
+        return arg_names
 
     def _parse_integer(self):
         token = self._consume(TokenTypes.integer)
@@ -126,11 +146,10 @@ def main():
         content = source.read()
 
     tokens = Tokenizer(content).tokenize()
-    parsed = Parser(tokens).parse()
-
     print("\nTokens:")
     pprint.pprint(tokens)
 
+    parsed = Parser(tokens).parse()
     print("\nParsed Tree:")
     pprint.pprint(parsed)
 
