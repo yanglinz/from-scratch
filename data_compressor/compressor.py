@@ -75,7 +75,7 @@ def render_tree(nodes):
             dot.edge(id, right_id, "1")
 
     walk_tree(nodes)
-    dot.render("test-output/round-table.gv", view=True)
+    dot.render("data_compressor/render.gv", view=True)
 
 
 def main():
