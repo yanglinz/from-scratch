@@ -89,15 +89,25 @@ class Compressor:
         walk(node)
         return lookup_table
 
+    @classmethod
+    def compress(cls, original):
+        tree = Compressor.build_tree(original)
+        table = Compressor.build_table(tree)
+
+        # We can use bin packing to represent an array of bits
+        # and write it to file, which will represent the compressed
+        # form of our data. We'll skip that step for now.
+        for datum in original:
+            key = ord(datum)
+            bits = table[key]
+            print(bits)
+
 
 def main():
     original_data = "abbcccc"
-    node = Compressor.build_tree(original_data)
-    table = Compressor.build_table(node)
-    import pprint
-
-    pprint.pprint(table)
-    render_tree(node)
+    tree = Compressor.build_tree(original_data)
+    render_tree(tree)
+    Compressor.compress(original_data)
 
 
 if __name__ == "__main__":
