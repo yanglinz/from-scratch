@@ -22,66 +22,66 @@ def chunks(l, n):
         yield l[i : i + n]
 
 
-def build_tree(original):
-    original_bytes = [b for b in bytearray(original.encode())]
-    unique_bytes = set(original_bytes)
-
-    def build_leaf(b):
-        return Leaf(byte=b, count=original_bytes.count(b))
-
-    nodes = [build_leaf(b) for b in unique_bytes]
-    nodes.sort(key=lambda n: n.count, reverse=True)
-
-    while True:
-        node1 = nodes.pop()
-        node2 = nodes.pop()
-        nodes.append(Node(left=node1, right=node2, count=node1.count + node2.count))
-        if len(nodes) == 1:
-            break
-
-    return nodes
-
-
-def render_tree(nodes):
+def render_tree(node):
     dot = Digraph()
 
-    def node_meta(node):
-        if isinstance(node, Leaf):
-            description = f"{node.byte}\n(n={node.count})"
+    def node_meta(n):
+        if isinstance(n, Leaf):
+            description = f"{chr(n.byte)}\n(n={n.count})"
         else:
-            description = f"(n={node.count})"
+            description = f"(n={n.count})"
 
-        return str(id(node)), description
+        return str(id(n)), description
 
-    def walk_tree(tree):
-        if isinstance(tree, list):
-            for t in tree:
-                walk_tree(t)
-
-        if isinstance(tree, Leaf):
-            id, description = node_meta(tree)
+    def walk(n):
+        if isinstance(n, Leaf):
+            id, description = node_meta(n)
             dot.node(id, description)
 
-        if isinstance(tree, Node):
-            id, description = node_meta(tree)
+        if isinstance(n, Node):
+            id, description = node_meta(n)
             dot.node(id, description)
 
-            walk_tree(tree.left)
-            left_id, __ = node_meta(tree.left)
+            walk(n.left)
+            left_id, __ = node_meta(n.left)
             dot.edge(id, left_id, "0")
 
-            walk_tree(tree.right)
-            right_id, __ = node_meta(tree.right)
+            walk(n.right)
+            right_id, __ = node_meta(n.right)
             dot.edge(id, right_id, "1")
 
-    walk_tree(nodes)
+    walk(node)
     dot.render("data_compressor/render.gv", view=True)
 
 
+class Compressor:
+    @classmethod
+    def build_tree(cls, original):
+        original_bytes = [b for b in bytearray(original.encode())]
+        unique_bytes = set(original_bytes)
+
+        def build_leaf(b):
+            return Leaf(byte=b, count=original_bytes.count(b))
+
+        nodes = [build_leaf(b) for b in unique_bytes]
+        nodes.sort(key=lambda n: n.count, reverse=True)
+
+        while True:
+            node1 = nodes.pop()
+            node2 = nodes.pop()
+            nodes.append(Node(left=node1, right=node2, count=node1.count + node2.count))
+            if len(nodes) == 1:
+                break
+        
+        return nodes[0]
+
+    @classmethod
+    def build_table(cls, node, path=[]):
+        pass
+
 def main():
     original_data = "abbcccc"
-    tree = build_tree(original_data)
-    print(tree)
+    tree = Compressor.build_tree(original_data)
     render_tree(tree)
 
 
