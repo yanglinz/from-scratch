@@ -72,17 +72,32 @@ class Compressor:
             nodes.append(Node(left=node1, right=node2, count=node1.count + node2.count))
             if len(nodes) == 1:
                 break
-        
+
         return nodes[0]
 
     @classmethod
-    def build_table(cls, node, path=[]):
-        pass
+    def build_table(cls, node):
+        lookup_table = {}
+
+        def walk(n, path=[]):
+            if isinstance(n, Leaf):
+                lookup_table[n.byte] = path
+            else:
+                walk(n.left, path + [0])
+                walk(n.right, path + [1])
+
+        walk(node)
+        return lookup_table
+
 
 def main():
     original_data = "abbcccc"
-    tree = Compressor.build_tree(original_data)
-    render_tree(tree)
+    node = Compressor.build_tree(original_data)
+    table = Compressor.build_table(node)
+    import pprint
+
+    pprint.pprint(table)
+    render_tree(node)
 
 
 if __name__ == "__main__":
