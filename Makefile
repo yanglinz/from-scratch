@@ -12,3 +12,7 @@ compressor:
 .PHONY: editor
 editor:
 	@poetry run python text_editor/editor.py
+
+.PHONY: shell 
+shell:
+	@poetry run python shell/shell.py
