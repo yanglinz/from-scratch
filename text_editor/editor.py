@@ -1,3 +1,4 @@
+import re
 import sys
 import tty
 import termios
@@ -17,11 +18,18 @@ def raw_mode():
 
 
 class Buffer:
-    pass
+    def __init__(self, lines):
+        self.lines = lines
+
+    def render(self):
+        for l in self.lines:
+            print(l, end="\r\n")
 
 
 class Cursor:
-    pass
+    def __init__(self, row, col):
+        self.row = row
+        self.col = col
 
 
 class ANSI:
@@ -35,9 +43,19 @@ class ANSI:
 
 
 class Editor:
+    def __init__(self, filename):
+        with open(filename) as f:
+            lines = f.readlines()
+        lines = [re.sub(r"\n$", "", l) for l in lines]
+
+        self.buffer = Buffer(lines)
+        self.cursor = Cursor(0, 0)
+
     def render(self):
         ANSI.clear_screen()
-        ANSI.move_cursor(0, 0)
+        ANSI.move_cursor(self.cursor.row, self.cursor.col)
+        self.buffer.render()
+        
 
     def handle_input(self):
         char = sys.stdin.read(1)
@@ -54,5 +72,5 @@ class Editor:
 
 
 if __name__ == "__main__":
-    editor = Editor()
+    editor = Editor("text_editor/test.txt")
     editor.run()
