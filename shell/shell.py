@@ -20,7 +20,7 @@ class Command:
         self.args = args
 
     def execute(self):
-        proc_args = [a.value for a in self.args]
+        proc_args = [a.value.strip("'") for a in self.args]
         subprocess.call(proc_args)
 
 
