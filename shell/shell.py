@@ -29,10 +29,11 @@ class Shell:
 
 
 def main():
-    user_input = input("> ")
-    parsed_input = parser.parse(user_input)
-    cmd = Command(parsed_input)
-    cmd.execute()
+    while True:
+        user_input = input("> ")
+        parsed_input = parser.parse(user_input)
+        cmd = Command(parsed_input)
+        cmd.execute()
 
 
 if __name__ == "__main__":
